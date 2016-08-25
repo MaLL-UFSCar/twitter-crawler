@@ -1,0 +1,36 @@
+#!/bin/bash
+
+conf_file=$1
+archive_dir=$2
+
+function check_compress(){
+
+	yesterday=$(date -d "-1 day" +%Y%m%d)
+	need_compress=$(ls $archive_dir | grep $yesterday)
+
+	echo need_compress=$need_compress
+	
+	if ! [[ -z $need_compress ]]; then
+		echo compressing...
+		mkdir $archive_dir/files
+		mv $archive_dir/$yesterday* $archive_dir/files
+		tar cfz $archive_dir/$yesterday.tar.gz $archive_dir/files
+		rm -r $archive_dir/files
+	fi
+
+}
+
+while :; do
+
+	today_date=$(date +%Y%m%d)
+	today_datetime=$(date +%Y%m%d%H%M%S)
+
+	output_file=$today_datetime.txt
+	error_file=$today_datetime.err
+	java -jar twitter-reader.jar $conf_file >> $archive_dir/$output_file 2>> $archive_dir/$error_file
+
+	check_compress
+
+	sleep 60m
+done
+
